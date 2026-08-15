@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MémoireManager — Ne perdez plus jamais le fil de vos 1:1</title>
+<meta name="description" content="MémoireManager garde en mémoire chaque échange avec vos collaborateurs : suivi des 1:1, synthèse automatique des réunions et agent IA qui rappelle les engagements. Essai gratuit.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23ff6b4a'/%3E%3Ctext x='32' y='44' font-family='Georgia' font-size='36' font-weight='bold' fill='%2314100d' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root{
+    --fond:#14100d;
+    --panneau:#1a1410;
+    --carte:#221a14;
+    --carte-2:#2a211a;
+    --coral:#ff6b4a;
+    --coral-fonce:#e9552f;
+    --tangerine:#ffa14a;
+    --ivoire:#f4ecdf;
+    --texte-doux:#c9bcaa;
+    --texte-faible:#8d8174;
+    --ligne:rgba(244,236,223,.09);
+    --rayon:22px;
+    --ombre-chaude:0 26px 55px -26px rgba(0,0,0,.7), 0 0 0 1px rgba(255,161,74,.07);
+    --lueur:0 0 110px -28px rgba(255,107,74,.38);
+    --serif:"Fraunces",Georgia,serif;
+    --sans:"Outfit",system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--fond);
+    color:var(--ivoire);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{ /* lueur tangerine douce en haut à droite */
+    content:"";position:fixed;top:-220px;right:-180px;width:620px;height:620px;
+    background:radial-gradient(circle at center, rgba(255,107,74,.14), rgba(255,161,74,.05) 45%, transparent 70%);
+    pointer-events:none;z-index:0;
+  }
+  a{color:inherit;text-decoration:none}
+  img,svg{display:block}
+  ::selection{background:rgba(255,107,74,.35);color:#fff}
+  :focus-visible{outline:2px solid var(--tangerine);outline-offset:3px;border-radius:6px}
+
+  /* ---------- Sidebar « espace de travail » ---------- */
+  .sidebar{
+    position:fixed;inset:0 auto 0 0;width:264px;z-index:50;
+    background:linear-gradient(180deg,#1a1410 0%,#16110d 100%);
+    border-right:1px solid var(--ligne);
+    display:flex;flex-direction:column;padding:26px 20px 22px;
+  }
+  .logo{display:flex;align-items:center;gap:11px;padding:0 6px}
+  .logo-mark{
+    width:38px;height:38px;border-radius:12px;flex:none;
+    background:linear-gradient(135deg,var(--coral),var(--tangerine));
+    display:grid;place-items:center;font-family:var(--serif);font-weight:700;font-size:21px;color:#1a0e08;
+    box-shadow:0 8px 22px -8px rgba(255,107,74,.55);
+  }
+  .logo-nom{font-family:var(--serif);font-weight:600;font-size:19px;letter-spacing:-.2px}
+  .logo-nom em{font-style:normal;color:var(--coral)}
+  .logo-tag{font-size:11px;color:var(--texte-faible);letter-spacing:.14em;text-transform:uppercase;display:block;margin-top:1px}
+
+  .nav{margin-top:34px;display:flex;flex-direction:column;gap:4px}
+  .nav a{
+    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;
+    color:var(--texte-doux);font-weight:500;font-size:15px;transition:background .18s,color .18s;
+  }
+  .nav a:hover{background:rgba(255,107,74,.08);color:var(--ivoire)}
+  .nav a.active{background:rgba(255,107,74,.14);color:var(--coral)}
+  .nav svg{width:18px;height:18px;opacity:.85}
+  .nav .badge{
+    margin-left:auto;font-size:11px;font-weight:700;color:var(--tangerine);
+    background:rgba(255,161,74,.12);border:1px solid rgba(255,161,74,.25);padding:2px 8px;border-radius:99px;
+  }
+
+  .sidebar-bas{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+  .plan-chip{
+    display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;
+    background:var(--carte);border:1px solid var(--ligne);font-size:13px;color:var(--texte-doux);
+  }
+  .plan-chip .pastille{width:9px;height:9px;border-radius:50%;background:var(--coral);box-shadow:0 0 10px rgba(255,107,74,.8);flex:none}
+  .plan-chip strong{color:var(--ivoire);font-weight:600}
+  .sidebar-bas .btn{width:100%;justify-content:center}
+
+  /* ---------- Boutons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    padding:14px 24px;border-radius:14px;border:none;cursor:pointer;
+    font-family:var(--sans);font-weight:600;font-size:15.5px;line-height:1;
+    transition:transform .16s,box-shadow .16s,background .16s;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-coral{
+    background:linear-gradient(135deg,var(--coral),#ff8a5c);color:#1a0e08;
+    box-shadow:0 14px 30px -12px rgba(255,107,74,.55), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .btn-coral:hover{transform:translateY(-2px);box-shadow:0 20px 38px -14px rgba(255,107,74,.65), inset 0 1px 0 rgba(255,255,255,.25)}
+  .btn-ghost{
+    background:transparent;color:var(--ivoire);border:1px solid rgba(244,236,223,.18);
+  }
+  .btn-ghost:hover{background:rgba(244,236,223,.05);border-color:rgba(244,236,223,.32)}
+  .btn-ivoire{background:var(--ivoire);color:#1a1410}
+  .btn-ivoire:hover{background:#fff;transform:translateY(-2px)}
+  .btn-lg{padding:17px 30px;font-size:16.5px;border-radius:16px}
+
+  /* ---------- Contenu principal ---------- */
+  .contenu{margin-left:264px;position:relative;z-index:1}
+  .section{max-width:1120px;margin:0 auto;padding:88px 48px}
+  .etiquette{
+    display:inline-flex;align-items:center;gap:9px;padding:7px 15px;border-radius:99px;
+    background:rgba(255,161,74,.1);border:1px solid rgba(255,161,74,.28);
+    color:var(--tangerine);font-size:13px;font-weight:600;letter-spacing:.02em;
+  }
+  .etiquette::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--tangerine);box-shadow:0 0 9px rgba(255,161,74,.9)}
+  .titre-section{font-family:var(--serif);font-weight:600;font-size:clamp(30px,3.6vw,42px);line-height:1.14;letter-spacing:-.5px;margin:18px 0 14px}
+  .sous-section{color:var(--texte-doux);font-size:17.5px;max-width:640px}
+
+  /* ---------- Hero ---------- */
+  .hero{padding:76px 48px 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;max-width:1160px;margin:0 auto;margin-left:264px}
+  .hero h1{
+    font-family:var(--serif);font-weight:600;font-size:clamp(38px,4.7vw,58px);line-height:1.08;
+    letter-spacing:-1px;margin:22px 0 20px;
+  }
+  .hero h1 .coral{color:var(--coral)}
+  .hero h1 .tangerine{color:var(--tangerine)}
+  .hero p.accroche{color:var(--texte-doux);font-size:18.5px;max-width:520px}
+  .hero-cta{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap}
+  .hero-points{display:flex;gap:22px;margin-top:34px;flex-wrap:wrap}
+  .hero-points span{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--texte-doux);font-weight:500}
+  .hero-points svg{width:16px;height:16px;color:var(--coral);flex:none}
+
+  /* ---------- Mockup d'application ---------- */
+  .mockup-wrap{position:relative}
+  .mockup-glow{position:absolute;inset:-40px;background:radial-gradient(circle at 65% 40%,rgba(255,107,74,.22),rgba(255,161,74,.08) 50%,transparent 72%);filter:blur(6px);pointer-events:none}
+  .mockup{
+    position:relative;background:var(--panneau);border:1px solid rgba(244,236,223,.1);
+    border-radius:24px;box-shadow:var(--ombre-chaude),var(--lueur);overflow:hidden;
+  }
+  .mockup-bar{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--ligne);background:rgba(0,0,0,.18)}
+  .mockup-bar i{width:10px;height:10px;border-radius:50%;background:#3a3129}
+  .mockup-bar i:first-child{background:var(--coral)}
+  .mockup-bar i:nth-child(2){background:var(--tangerine)}
+  .mockup-bar span{margin-left:10px;font-size:12.5px;color:var(--texte-faible);letter-spacing:.05em}
+  .mockup-body{padding:20px}
+  .mockup-entete{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .mockup-entete strong{font-size:13.5px;font-weight:600;color:var(--ivoire);letter-spacing:.02em}
+  .mockup-entete span{font-size:11.5px;color:var(--tangerine);font-weight:600;background:rgba(255,161,74,.1);border:1px solid rgba(255,161,74,.25);padding:3px 9px;border-radius:99px}
+  .mockup-carte{
+    background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:13px 15px;
+    display:flex;align-items:center;gap:12px;margin-bottom:10px;transition:transform .2s;
+  }
+  .mockup-carte:hover{transform:translateX(3px)}
+  .avatar{
+    width:36px;height:36px;border-radius:12px;flex:none;display:grid;place-items:center;
+    font-weight:700;font-size:13.5px;color:#1a0e08;
+  }
+  .avatar.c1{background:linear-gradient(135deg,#ff9a76,#ff6b4a)}
+  .avatar.c2{background:linear-gradient(135deg,#ffc18a,#ffa14a)}
+  .avatar.c3{background:linear-gradient(135deg,#f4a08c,#e07a5f)}
+  .mockup-carte .infos{flex:1;min-width:0}
+  .mockup-carte .nom{font-size:13.5px;font-weight:600;color:var(--ivoire)}
+  .mockup-carte .sous{font-size:11.5px;color:var(--texte-faible);margin-top:1px}
+  .mockup-carte .dans{font-size:11.5px;font-weight:700;color:var(--coral);flex:none}
+  .mockup-carte .dans.tangerine{color:var(--tangerine)}
+  .mini-barres{display:flex;gap:3px;margin-top:6px}
+  .mini-barres i{width:14px;height:4px;border-radius:2px;background:rgba(244,236,223,.12)}
+  .mini-barres i.on{background:var(--coral)}
+  .mockup-synthese{margin-top:16px;background:var(--carte-2);border:1px solid rgba(255,107,74,.22);border-radius:16px;padding:15px 16px}
+  .mockup-synthese .titre{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tangerine);margin-bottom:10px}
+  .mockup-synthese .ligne{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:var(--texte-doux);padding:4px 0}
+  .mockup-synthese .ligne svg{width:14px;height:14px;flex:none;margin-top:2px}
+  .mockup-synthese .ligne.fait svg{color:var(--coral)}
+  .mockup-synthese .ligne.a-faire svg{color:var(--tangerine)}
+  .mockup-synthese .ligne.blocage{color:#ffb3a0}
+  .mockup-synthese .ligne.blocage svg{color:var(--coral)}
+
+  .rappel-flottant{
+    position:absolute;left:-34px;bottom:-26px;z-index:3;
+    background:var(--panneau);border:1px solid rgba(255,161,74,.32);border-radius:16px;
+    padding:13px 16px;display:flex;align-items:center;gap:11px;
+    box-shadow:0 24px 50px -18px rgba(0,0,0,.75), 0 0 40px -12px rgba(255,161,74,.35);
+    animation:flotter 5s ease-in-out infinite;max-width:300px;
+  }
+  .rappel-flottant .cloche{
+    width:34px;height:34px;border-radius:11px;flex:none;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--coral),var(--tangerine));color:#1a0e08;
+  }
+  .rappel-flottant .cloche svg{width:17px;height:17px}
+  .rappel-flottant .txt{font-size:12px;color:var(--texte-doux);line-height:1.45}
+  .rappel-flottant .txt strong{color:var(--ivoire);font-weight:600;display:block}
+  @keyframes flotter{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  @media (prefers-reduced-motion:reduce){.rappel-flottant{animation:none}}
+
+  /* ---------- Fonctions ---------- */
+  .fonctions{background:linear-gradient(180deg,transparent,rgba(255,107,74,.035) 30%,transparent 90%)}
+  .fonction-row{
+    display:grid;grid-template-columns:1.05fr .95fr;gap:52px;align-items:center;
+    padding:52px 0;border-top:1px solid var(--ligne);
+  }
+  .fonction-row:first-of-type{border-top:none;padding-top:20px}
+  .fonction-num{
+    font-family:var(--serif);font-weight:600;font-size:15px;letter-spacing:.18em;
+    color:var(--tangerine);display:flex;align-items:center;gap:14px;margin-bottom:14px;
+  }
+  .fonction-num::after{content:"";height:1px;width:52px;background:rgba(255,161,74,.4)}
+  .fonction-titre{font-family:var(--serif);font-weight:600;font-size:clamp(24px,2.6vw,32px);letter-spacing:-.4px;line-height:1.2;margin-bottom:12px}
+  .fonction-texte{color:var(--texte-doux);font-size:16.5px;max-width:460px}
+  .fonction-texte strong{color:var(--ivoire);font-weight:600}
+  .visuel{position:relative}
+  .visuel-carte{background:var(--panneau);border:1px solid var(--ligne);border-radius:var(--rayon);box-shadow:var(--ombre-chaude);padding:20px}
+  .visuel .pastille-abs{position:absolute;top:-14px;right:-10px;background:var(--coral);color:#1a0e08;font-weight:700;font-size:12.5px;padding:7px 13px;border-radius:99px;box-shadow:0 10px 24px -8px rgba(255,107,74,.6)}
+  .fiche-collab{display:flex;align-items:center;gap:13px;padding:11px 0}
+  .fiche-collab + .fiche-collab{border-top:1px solid var(--ligne)}
+  .fiche-collab .avatar{width:40px;height:40px}
+  .fiche-collab .infos{flex:1}
+  .fiche-collab .nom{font-size:14px;font-weight:600}
+  .fiche-collab .sous{font-size:12px;color:var(--texte-faible)}
+  .fiche-collab .stat{font-size:12px;font-weight:700;color:var(--coral);background:rgba(255,107,74,.1);border:1px solid rgba(255,107,74,.25);padding:4px 10px;border-radius:99px;flex:none}
+  .synth-lignes .ligne{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--texte-doux)}
+  .synth-lignes .ligne + .ligne{border-top:1px solid var(--ligne)}
+  .synth-lignes .ligne .coche{width:17px;height:17px;border-radius:6px;flex:none;display:grid;place-items:center;background:var(--coral);color:#1a0e08}
+  .synth-lignes .ligne .coche.vide{background:transparent;border:1.5px solid rgba(244,236,223,.3)}
+  .synth-lignes .ligne .point{width:7px;height:7px;border-radius:50%;background:var(--coral);flex:none}
+  .rappel-visuel{
+    display:flex;align-items:center;gap:13px;background:var(--panneau);border:1px solid rgba(255,161,74,.3);
+    border-radius:18px;padding:16px;box-shadow:var(--ombre-chaude);
+  }
+  .rappel-visuel .cloche{width:42px;height:42px;border-radius:13px;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,var(--coral),var(--tangerine));color:#1a0e08}
+  .rappel-visuel .txt{font-size:13.5px;color:var(--texte-doux);line-height:1.5}
+  .rappel-visuel .txt strong{color:var(--ivoire)}
+  .rappel-visuel .heure{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--tangerine);flex:none}
+  .visuel .sous-carte{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .visuel .mini-stat{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:14px 16px}
+  .visuel .mini-stat .valeur{font-family:var(--serif);font-weight:700;font-size:22px;color:var(--coral)}
+  .visuel .mini-stat .label{font-size:11.5px;color:var(--texte-faible);margin-top:2px}
+
+  /* ---------- Tarifs ---------- */
+  .tarifs-entete{text-align:center;margin-bottom:52px}
+  .tarifs-entete .titre-section{max-width:640px;margin-left:auto;margin-right:auto}
+  .tarifs-entete .sous-section{margin:0 auto}
+  .offres{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:stretch}
+  .offre{
+    background:var(--panneau);border:1px solid var(--ligne);border-radius:26px;
+    padding:32px 30px;display:flex;flex-direction:column;position:relative;box-shadow:var(--ombre-chaude);
+    transition:transform .2s;
+  }
+  .offre:hover{transform:translateY(-4px)}
+  .offre.populaire{
+    background:linear-gradient(180deg,#241a13,#1c1510);
+    border-color:rgba(255,107,74,.5);
+    box-shadow:var(--ombre-chaude),0 0 70px -22px rgba(255,107,74,.4);
+  }
+  .offre .badge-pop{
+    position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,var(--coral),var(--tangerine));color:#1a0e08;
+    font-size:12px;font-weight:700;padding:7px 16px;border-radius:99px;white-space:nowrap;
+    box-shadow:0 10px 24px -8px rgba(255,107,74,.6);
+  }
+  .offre h3{font-family:var(--serif);font-weight:600;font-size:23px;letter-spacing:-.3px}
+  .offre .pour{font-size:13.5px;color:var(--texte-faible);margin:4px 0 18px}
+  .offre .prix{display:flex;align-items:baseline;gap:7px;margin-bottom:20px}
+  .offre .prix .montant{font-family:var(--serif);font-weight:700;font-size:44px;letter-spacing:-1px;line-height:1}
+  .offre .prix .montant.coral{color:var(--coral)}
+  .offre .prix .montant.tangerine{color:var(--tangerine)}
+  .offre .prix .mois{color:var(--texte-faible);font-size:14px}
+  .offre ul{list-style:none;margin:0 0 26px;display:flex;flex-direction:column;gap:11px;flex:1}
+  .offre li{display:flex;gap:11px;font-size:14.5px;color:var(--texte-doux);line-height:1.45}
+  .offre li svg{width:17px;height:17px;flex:none;margin-top:3px;color:var(--coral)}
+  .offre li.manquant{color:var(--texte-faible)}
+  .offre li.manquant svg{color:#5c524a}
+  .offre .btn{margin-top:auto}
+  .note-paiement{text-align:center;color:var(--texte-faible);font-size:13.5px;margin-top:26px}
+
+  /* ---------- Formulaire ---------- */
+  .essai{padding-bottom:96px}
+  .essai-cadre{
+    background:linear-gradient(160deg,#241a13,#1a1410);
+    border:1px solid rgba(255,107,74,.25);border-radius:30px;
+    box-shadow:var(--ombre-chaude),var(--lueur);
+    padding:54px 54px 46px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;
+    position:relative;overflow:hidden;
+  }
+  .essai-cadre::after{content:"";position:absolute;top:-140px;right:-120px;width:380px;height:380px;background:radial-gradient(circle,rgba(255,161,74,.14),transparent 68%);pointer-events:none}
+  .essai-gauche h2{font-family:var(--serif);font-weight:600;font-size:clamp(28px,3.2vw,38px);line-height:1.15;letter-spacing:-.5px;margin:16px 0 14px}
+  .essai-gauche p{color:var(--texte-doux);font-size:16.5px;max-width:420px}
+  .essai-gauche .garanties{list-style:none;margin-top:26px;display:flex;flex-direction:column;gap:13px}
+  .essai-gauche .garanties li{display:flex;gap:11px;font-size:14.5px;color:var(--texte-doux)}
+  .essai-gauche .garanties svg{width:18px;height:18px;flex:none;color:var(--coral);margin-top:2px}
+  .formulaire{display:flex;flex-direction:column;gap:16px}
+  .champ label{display:block;font-size:13px;font-weight:600;color:var(--ivoire);margin-bottom:7px;letter-spacing:.02em}
+  .champ input,.champ textarea{
+    width:100%;background:rgba(20,16,13,.55);border:1px solid rgba(244,236,223,.14);
+    border-radius:13px;padding:13px 15px;color:var(--ivoire);font-family:var(--sans);font-size:15px;
+    transition:border-color .18s,box-shadow .18s;resize:vertical;
+  }
+  .champ input::placeholder,.champ textarea::placeholder{color:var(--texte-faible)}
+  .champ input:focus,.champ textarea:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 3px rgba(255,107,74,.18)}
+  .formulaire .btn{width:100%;margin-top:6px}
+  .formulaire .mini{font-size:12.5px;color:var(--texte-faible);text-align:center;margin-top:4px}
+  .form-success{
+    display:none;background:rgba(255,161,74,.08);border:1px solid rgba(255,161,74,.35);
+    border-radius:18px;padding:26px;text-align:center;
+  }
+  .form-success .icone{width:52px;height:52px;margin:0 auto 14px;border-radius:16px;background:linear-gradient(135deg,var(--coral),var(--tangerine));display:grid;place-items:center;color:#1a0e08}
+  .form-success h3{font-family:var(--serif);font-weight:600;font-size:21px;margin-bottom:8px}
+  .form-success p{color:var(--texte-doux);font-size:14.5px}
+  .form-error{display:none;background:rgba(255,107,74,.1);border:1px solid rgba(255,107,74,.4);color:#ffb3a0;font-size:13.5px;border-radius:12px;padding:11px 14px}
+
+  /* ---------- Footer ---------- */
+  footer{border-top:1px solid var(--ligne);background:#120e0b;padding:46px 48px 38px;margin-left:264px}
+  .footer-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:34px;flex-wrap:wrap}
+  .footer-inner .logo-nom{font-size:17px}
+  .footer-links{display:flex;gap:22px;font-size:14px;color:var(--texte-doux)}
+  .footer-links a:hover{color:var(--coral)}
+  .footer-inner .droits{margin-left:auto;font-size:13px;color:var(--texte-faible)}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:1080px){
+    .hero{grid-template-columns:1fr;gap:64px;padding-top:56px}
+    .rappel-flottant{left:auto;right:-8px}
+    .fonction-row{grid-template-columns:1fr;gap:34px}
+    .offres{grid-template-columns:1fr;max-width:480px;margin:0 auto}
+    .essai-cadre{grid-template-columns:1fr;padding:40px 30px}
+  }
+  @media (max-width:880px){
+    .sidebar{position:static;width:auto;flex-direction:row;align-items:center;padding:16px 20px;border-right:none;border-bottom:1px solid var(--ligne);gap:18px}
+    .nav{margin:0;margin-left:auto;flex-direction:row;gap:2px}
+    .nav a{padding:8px 11px;font-size:14px}
+    .nav a span{display:none}
+    .sidebar-bas{display:none}
+    .contenu{margin-left:0}
+    .hero{margin-left:0}
+    footer{margin-left:0}
+    .section{padding:64px 24px}
+    .hero{padding:48px 24px 40px}
+    .logo-tag{display:none}
+  }
+  @media (max-width:560px){
+    .hero-cta .btn{width:100%}
+    .hero-points{flex-direction:column;gap:10px}
+    .offres{padding:0 6px}
+    .fonction-row{gap:26px;padding:38px 0}
+    .visuel .sous-carte{grid-template-columns:1fr}
+    .footer-inner{flex-direction:column;align-items:flex-start}
+    .footer-inner .droits{margin-left:0}
+  }
+</style>
+</head>
+<body>
+
+<!-- ======= SIDEBAR ======= -->
+<aside class="sidebar">
+  <a href="#" class="logo" aria-label="MémoireManager — accueil">
+    <span class="logo-mark">M</span>
+    <span>
+      <span class="logo-nom">Mémoire<em>Manager</em></span>
+      <span class="logo-tag">La mémoire des managers</span>
+    </span>
+  </a>
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="#" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>
+      <span>Accueil</span>
+    </a>
+    <a href="#fonctions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9h8M8 13h5"/><path d="M16 15.5h.01M12 15.5h.01"/></svg>
+      <span>Les 3 fonctions</span>
+    </a>
+    <a href="#offres">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 6.5c0-1.7-2.2-3-5-3s-5 1.3-5 3 2 2.6 5 3.5 5 1.8 5 3.5-2.2 3-5 3-5-1.3-5-3"/></svg>
+      <span>Tarifs</span>
+    </a>
+    <a href="app-demo.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 8 8-4-4 8 4 8-8-4"/><circle cx="3.5" cy="3.5" r="1"/><circle cx="20.5" cy="20.5" r="1"/></svg>
+      <span>Démo en direct</span>
+      <span class="badge">Nouveau</span>
+    </a>
+    <a href="#essai">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H8l-4 4V4Z"/><path d="M8.5 9h7M8.5 12.5h4"/></svg>
+      <span>Essai gratuit</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-bas">
+    <div class="plan-chip">
+      <span class="pastille"></span>
+      <span><strong>Offre Gratuite</strong> · 3 collaborateurs max</span>
+    </div>
+    <a href="app-demo.html" class="btn btn-coral">Ouvrir la démo</a>
+  </div>
+</aside>
+
+<!-- ======= HERO ======= -->
+<header class="hero">
+  <div>
+    <span class="etiquette">Nouveau — l'agent IA de rappel est disponible</span>
+    <h1>Ne perdez plus <span class="coral">jamais le fil</span> de vos <span class="tangerine">1:1</span>.</h1>
+    <p class="accroche">Chaque échange avec vos collaborateurs est retenu : objectifs, engagements, blocages. Le bot écrit la synthèse, l'agent IA rappelle les promesses. Vous, vous managez — <strong>nous, on retient.</strong></p>
+    <div class="hero-cta">
+      <a href="#essai" class="btn btn-coral btn-lg">Essayer gratuitement</a>
+      <a href="app-demo.html" class="btn btn-ghost btn-lg">Voir la démo en direct</a>
+    </div>
+    <div class="hero-points">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sans carte bancaire</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Prêt en 2 minutes</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Vos données restent privées</span>
+    </div>
+  </div>
+
+  <!-- Mockup application -->
+  <div class="mockup-wrap">
+    <div class="mockup-glow"></div>
+    <div class="mockup">
+      <div class="mockup-bar"><i></i><i></i><i></i><span>memoiremanager.app — espace de travail</span></div>
+      <div class="mockup-body">
+        <div class="mockup-entete">
+          <strong>Équipe · 3 collaborateurs</strong>
+          <span>1:1 à jour</span>
+        </div>
+
+        <div class="mockup-carte">
+          <span class="avatar c1">CR</span>
+          <div class="infos">
+            <div class="nom">Camille Rousseau</div>
+            <div class="sous">Product Designer</div>
+            <div class="mini-barres"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+          </div>
+          <span class="dans">dans 6 j</span>
+        </div>
+
+        <div class="mockup-carte">
+          <span class="avatar c2">KB</span>
+          <div class="infos">
+            <div class="nom">Karim Benali</div>
+            <div class="sous">Développeur front</div>
+            <div class="mini-barres"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          </div>
+          <span class="dans tangerine">dans 2 j</span>
+        </div>
+
+        <div class="mockup-carte">
+          <span class="avatar c3">SM</span>
+          <div class="infos">
+            <div class="nom">Sofia Marchetti</div>
+            <div class="sous">Account Manager</div>
+            <div class="mini-barres"><i class="on"></i><i></i><i></i><i></i></div>
+          </div>
+          <span class="dans tangerine">demain</span>
+        </div>
+
+        <div class="mockup-synthese">
+          <div class="titre">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+            Synthèse du 1:1 · Camille
+          </div>
+          <div class="ligne fait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Devis envoyé au client Luna</div>
+          <div class="ligne a-faire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/></svg>Relancer le prestataire graphiste</div>
+          <div class="ligne a-faire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/></svg>Préparer la maquette v2</div>
+          <div class="ligne blocage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>Blocage : accès API facturation en attente</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rappel-flottant">
+      <span class="cloche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      </span>
+      <span class="txt"><strong>Agent IA · rappel automatique</strong>Karim doit relancer le client avant vendredi.</span>
+    </div>
+  </div>
+</header>
+
+<!-- ======= FONCTIONS ======= -->
+<main class="contenu">
+  <section class="section fonctions" id="fonctions">
+    <span class="etiquette">Comment ça marche</span>
+    <h2 class="titre-section">Trois fonctions. Une seule mémoire.</h2>
+    <p class="sous-section">MémoireManager couvre tout le cycle du point 1:1 : avant, pendant et après l'échange. Chaque brique est pensée pour vous faire gagner du temps — et de la confiance.</p>
+
+    <!-- 01 Suivi -->
+    <div class="fonction-row">
+      <div>
+        <div class="fonction-num">01 — Le suivi</div>
+        <h3 class="fonction-titre">Chaque collaborateur a sa fiche. Rien ne tombe dans l'oubli.</h3>
+        <p class="fonction-texte">Objectifs en cours, engagements pris, blocages signalés, historique des échanges : tout est centralisé sur une fiche unique. Entre deux 1:1, vous savez toujours <strong>où en est chacun</strong> — sans fouiller vos notes, votre boîte mail ou vos post-it.</p>
+      </div>
+      <div class="visuel">
+        <span class="pastille-abs">Fiche à jour</span>
+        <div class="visuel-carte">
+          <div class="fiche-collab">
+            <span class="avatar c1">CR</span>
+            <div class="infos"><div class="nom">Camille Rousseau</div><div class="sous">3 engagements · 2 en cours</div></div>
+            <span class="stat">Prochain 1:1 : 6 j</span>
+          </div>
+          <div class="fiche-collab">
+            <span class="avatar c2">KB</span>
+            <div class="infos"><div class="nom">Karim Benali</div><div class="sous">5 engagements · 1 blocage</div></div>
+            <span class="stat">Prochain 1:1 : 2 j</span>
+          </div>
+          <div class="fiche-collab">
+            <span class="avatar c3">SM</span>
+            <div class="infos"><div class="nom">Sofia Marchetti</div><div class="sous">2 engagements · à jour</div></div>
+            <span class="stat">Prochain 1:1 : demain</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 Bot -->
+    <div class="fonction-row">
+      <div>
+        <div class="fonction-num">02 — Le bot en réunion</div>
+        <h3 class="fonction-titre">Le bot rejoint vos réunions, la synthèse s'écrit toute seule.</h3>
+        <p class="fonction-texte">Invitez le bot MémoireManager à vos 1:1 — Teams, Meet ou Zoom. Il écoute, structure et rédige la synthèse : <strong>décisions prises, actions décidées, points de blocage</strong>. Vous retrouvez tout dans la fiche du collaborateur, prêt à relire avant le prochain échange.</p>
+      </div>
+      <div class="visuel">
+        <div class="visuel-carte">
+          <div class="mockup-synthese" style="margin-top:0;border-color:rgba(255,161,74,.22)">
+            <div class="titre">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+              Synthèse générée · 1:1 Karim
+            </div>
+            <div class="synth-lignes">
+              <div class="ligne"><span class="coche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Composant tableau de bord livré</div>
+              <div class="ligne"><span class="coche vide"></span>Finaliser la refonte du tunnel d'inscription</div>
+              <div class="ligne"><span class="coche vide"></span>Envoyer la démo à l'équipe produit</div>
+              <div class="ligne"><span class="point"></span>Sujet : arbitrer la stack de tests</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 Agent -->
+    <div class="fonction-row">
+      <div>
+        <div class="fonction-num">03 — L'agent IA de rappel</div>
+        <h3 class="fonction-titre">L'agent rappelle les engagements. Jusqu'au bout.</h3>
+        <p class="fonction-texte">Une promesse faite en réunion mérite d'être tenue. L'agent IA surveille chaque engagement et <strong>relance au bon moment</strong> — vous, et le collaborateur concerné. Fini les « je pensais que tu t'en occupais » : chaque action est suivie jusqu'à son terme.</p>
+      </div>
+      <div class="visuel">
+        <div class="rappel-visuel">
+          <span class="cloche">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          </span>
+          <div class="txt"><strong>Rappel · Karim Benali</strong>« Relancer le client avant vendredi » arrive à échéance.</div>
+          <span class="heure">J-2</span>
+        </div>
+        <div class="sous-carte">
+          <div class="mini-stat"><div class="valeur">12</div><div class="label">engagements suivis ce mois</div></div>
+          <div class="mini-stat"><div class="valeur">9</div><div class="label">tenus à la date prévue</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= TARIFS ======= -->
+  <section class="section" id="offres">
+    <div class="tarifs-entete">
+      <span class="etiquette">Tarifs</span>
+      <h2 class="titre-section">Un prix simple, pour chaque étape.</h2>
+      <p class="sous-section">Commencez gratuitement. Passez à Pro quand votre équipe grandit. Sans engagement, résiliable à tout moment.</p>
+    </div>
+
+    <div class="offres">
+      <article class="offre">
+        <h3>Gratuit</h3>
+        <p class="pour">Pour découvrir la méthode et prendre le rythme des 1:1.</p>
+        <div class="prix"><span class="montant">0 €</span><span class="mois">/ mois</span></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Jusqu'à 3 collaborateurs</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Suivi des 1:1 et fiches collaborateurs</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Synthèses automatiques des réunions</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Réunions et historique illimités</li>
+          <li class="manquant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Agent IA de rappel</li>
+          <li class="manquant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Multi-équipes</li>
+        </ul>
+        <a href="#essai" class="btn btn-ghost">Créer mon espace</a>
+      </article>
+
+      <article class="offre populaire">
+        <span class="badge-pop">Le plus choisi</span>
+        <h3>Pro</h3>
+        <p class="pour">Pour les managers qui veulent des engagements tenus.</p>
+        <div class="prix"><span class="montant coral">12 €</span><span class="mois">/ mois</span></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Collaborateurs illimités</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><strong>Agent IA de rappel</strong> des engagements</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Synthèses intelligentes enrichies par IA</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Historique illimité + export CSV</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Rappels par email et agenda</li>
+        </ul>
+        <a href="#essai" class="btn btn-coral">Passer à Pro</a>
+      </article>
+
+      <article class="offre">
+        <h3>Team</h3>
+        <p class="pour">Pour les équipes qui grandissent et se multiplient.</p>
+        <div class="prix"><span class="montant tangerine">29 €</span><span class="mois">/ mois</span></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Tout Pro, plus :</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Multi-équipes et rôles</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><strong>Synthèses automatiques</strong> de toutes les réunions</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Bot invité pour toute l'équipe</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Rappels pour tous les managers</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Support prioritaire</li>
+        </ul>
+        <a href="#essai" class="btn btn-ghost">Choisir Team</a>
+      </article>
+    </div>
+
+    <p class="note-paiement">Paiement par carte ou virement. Sans engagement, résiliable à tout moment.</p>
+  </section>
+
+  <!-- ======= ESSAI GRATUIT ======= -->
+  <section class="section essai" id="essai">
+    <div class="essai-cadre">
+      <div class="essai-gauche">
+        <span class="etiquette">Essai gratuit</span>
+        <h2>Essayez MémoireManager, gratuitement.</h2>
+        <p>Racontez-nous votre équipe : nous activons votre espace sous 24 h ouvrées et nous vous accompagnons pour vos premiers 1:1.</p>
+        <ul class="garanties">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5.5v6c0 5 3.4 8.6 8 10.5 4.6-1.9 8-5.5 8-10.5v-6L12 2Z"/><path d="m9 12 2 2 4-4"/></svg>Aucune carte bancaire demandée</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5.5v6c0 5 3.4 8.6 8 10.5 4.6-1.9 8-5.5 8-10.5v-6L12 2Z"/><path d="m9 12 2 2 4-4"/></svg>Offre Gratuite : 3 collaborateurs, pour toujours</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5.5v6c0 5 3.4 8.6 8 10.5 4.6-1.9 8-5.5 8-10.5v-6L12 2Z"/><path d="m9 12 2 2 4-4"/></svg>Vos données restent les vôtres</li>
+        </ul>
+      </div>
+
+      <div>
+        <form class="formulaire" id="formEssai" novalidate>
+          <div class="champ">
+            <label for="f-nom">Votre nom</label>
+            <input type="text" id="f-nom" name="name" placeholder="Prénom Nom" required autocomplete="name">
+          </div>
+          <div class="champ">
+            <label for="f-email">Votre email professionnel</label>
+            <input type="email" id="f-email" name="email" placeholder="vous@entreprise.fr" required autocomplete="email">
+          </div>
+          <div class="champ">
+            <label for="f-question">Parlez-nous de votre équipe</label>
+            <textarea id="f-question" name="question" rows="4" placeholder="Combien de collaborateurs ? Quel rythme de 1:1 ? Qu'est-ce qui vous échappe aujourd'hui ?" required></textarea>
+          </div>
+          <div class="form-error" id="formErreur"></div>
+          <button type="submit" class="btn btn-coral" id="btnEssai">
+            <span>Demander mon essai gratuit</span>
+          </button>
+          <p class="mini">Réponse sous 24 h ouvrées. Aucun spam, jamais.</p>
+        </form>
+
+        <div class="form-success" id="formSucces" role="status">
+          <div class="icone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <h3>Demande bien reçue !</h3>
+          <p>Merci <strong id="succesNom">à vous</strong>. Nous revenons vers vous sous 24 h ouvrées pour activer votre espace MémoireManager.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ======= FOOTER ======= -->
+<footer>
+  <div class="footer-inner">
+    <a href="#" class="logo" style="gap:10px">
+      <span class="logo-mark" style="width:32px;height:32px;font-size:17px;border-radius:10px">M</span>
+      <span class="logo-nom">Mémoire<em>Manager</em></span>
+    </a>
+    <nav class="footer-links" aria-label="Liens pied de page">
+      <a href="#fonctions">Fonctions</a>
+      <a href="#offres">Tarifs</a>
+      <a href="app-demo.html">Démo</a>
+      <a href="#essai">Essai gratuit</a>
+      <a href="mailto:contact@memoiremanager.app">Contact</a>
+    </nav>
+    <span class="droits">© 2026 MémoireManager — Fait avec soin en France.</span>
+  </div>
+</footer>
+
+<script>
+  // ---------- EmailJS : essai gratuit (envoi réel) ----------
+  (function(){
+    var SERVICE_ID = "service_cy1ytdb";
+    var TEMPLATE_ID = "template_xpo58cv";
+    var PUBLIC_KEY  = "8Pui4ZEqxW2jRVF7h";
+    var SITE        = "memoire-manager";
+
+    var formulaire = document.getElementById("formEssai");
+    var btn        = document.getElementById("btnEssai");
+    var succes     = document.getElementById("formSucces");
+    var erreur     = document.getElementById("formErreur");
+
+    emailjs.init(PUBLIC_KEY);
+
+    formulaire.addEventListener("submit", function(e){
+      e.preventDefault();
+      erreur.style.display = "none";
+
+      var nom  = document.getElementById("f-nom").value.trim();
+      var email = document.getElementById("f-email").value.trim();
+      var question = document.getElementById("f-question").value.trim();
+      var emailValide = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+
+      if(!nom || !email || !question){
+        afficherErreur("Merci de remplir tous les champs pour que nous puissions vous répondre.");
+        return;
+      }
+      if(!emailValide){
+        afficherErreur("Cet email ne semble pas valide. Vérifiez-le, puis réessayez.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-chargement">Envoi en cours…</span>';
+
+      emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+        site: SITE,
+        name: nom,
+        email: email,
+        question: question
+      }).then(function(){
+        formulaire.style.display = "none";
+        document.getElementById("succesNom").textContent = nom.split(" ")[0];
+        succes.style.display = "block";
+      }, function(err){
+        afficherErreur("L'envoi a échoué (réseau ou service momentanément indisponible). Merci de réessayer dans un instant.");
+        btn.disabled = false;
+        btn.innerHTML = '<span>Demander mon essai gratuit</span>';
+        console.error("EmailJS error:", err);
+      });
+    });
+
+    function afficherErreur(msg){
+      erreur.textContent = msg;
+      erreur.style.display = "block";
+    }
+  })();
+
+  // ---------- Nav active au défilement ----------
+  (function(){
+    var liens = document.querySelectorAll(".nav a");
+    var sections = ["fonctions","offres","essai"];
+    function surligner(){
+      var y = window.scrollY + 120;
+      var courant = "";
+      sections.forEach(function(id){
+        var el = document.getElementById(id);
+        if(el && el.offsetTop <= y) courant = id;
+      });
+      liens.forEach(function(a){
+        var cible = a.getAttribute("href").replace("#","");
+        a.classList.toggle("active", cible === courant);
+      });
+    }
+    window.addEventListener("scroll", surligner, {passive:true});
+    surligner();
+  })();
+</script>
+</body>
+</html>

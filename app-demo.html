@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Démo — MémoireManager · La mémoire des managers</title>
+<meta name="description" content="Démo en direct de MémoireManager : suivez vos collaborateurs, générez la synthèse automatique de vos 1:1 et préparez le prochain échange.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23ff6b4a'/%3E%3Ctext x='32' y='44' font-family='Georgia' font-size='36' font-weight='bold' fill='%2314100d' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fond:#14100d;
+    --panneau:#1a1410;
+    --carte:#221a14;
+    --carte-2:#2a211a;
+    --coral:#ff6b4a;
+    --coral-fonce:#e9552f;
+    --tangerine:#ffa14a;
+    --ivoire:#f4ecdf;
+    --texte-doux:#c9bcaa;
+    --texte-faible:#8d8174;
+    --vert:#7bc47f;
+    --ligne:rgba(244,236,223,.09);
+    --rayon:20px;
+    --ombre-chaude:0 22px 48px -24px rgba(0,0,0,.7), 0 0 0 1px rgba(255,161,74,.06);
+    --serif:"Fraunces",Georgia,serif;
+    --sans:"Outfit",system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--fond);color:var(--ivoire);font-family:var(--sans);
+    font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  body::before{content:"";position:fixed;top:-200px;right:-160px;width:560px;height:560px;
+    background:radial-gradient(circle at center,rgba(255,107,74,.12),rgba(255,161,74,.04) 45%,transparent 70%);
+    pointer-events:none;z-index:0}
+  a{color:inherit;text-decoration:none}
+  button{font-family:var(--sans)}
+  ::selection{background:rgba(255,107,74,.35);color:#fff}
+  :focus-visible{outline:2px solid var(--tangerine);outline-offset:3px;border-radius:6px}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    position:fixed;inset:0 auto 0 0;width:262px;z-index:50;
+    background:linear-gradient(180deg,#1a1410 0%,#16110d 100%);
+    border-right:1px solid var(--ligne);
+    display:flex;flex-direction:column;padding:24px 18px 20px;
+  }
+  .logo{display:flex;align-items:center;gap:11px;padding:0 6px}
+  .logo-mark{width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--coral),var(--tangerine));font-family:var(--serif);
+    font-weight:700;font-size:21px;color:#1a0e08;box-shadow:0 8px 22px -8px rgba(255,107,74,.55)}
+  .logo-nom{font-family:var(--serif);font-weight:600;font-size:18.5px;letter-spacing:-.2px}
+  .logo-nom em{font-style:normal;color:var(--coral)}
+  .nav{margin-top:30px;display:flex;flex-direction:column;gap:4px}
+  .nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;color:var(--texte-doux);font-weight:500;font-size:14.5px;transition:background .18s,color .18s}
+  .nav a:hover{background:rgba(255,107,74,.08);color:var(--ivoire)}
+  .nav a.active{background:rgba(255,107,74,.14);color:var(--coral)}
+  .nav svg{width:17px;height:17px;opacity:.85}
+  .nav .compteur{margin-left:auto;font-size:11px;font-weight:700;color:var(--tangerine);background:rgba(255,161,74,.12);border:1px solid rgba(255,161,74,.25);padding:1px 8px;border-radius:99px;min-width:24px;text-align:center}
+  .sidebar-bas{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+  .plan-carte{background:var(--carte);border:1px solid var(--ligne);border-radius:18px;padding:15px 16px}
+  .plan-carte .entete{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;margin-bottom:9px}
+  .plan-carte .entete strong{color:var(--ivoire);font-weight:600}
+  .plan-carte .entete span{color:var(--texte-faible)}
+  .jauge{height:7px;border-radius:99px;background:rgba(244,236,223,.08);overflow:hidden}
+  .jauge i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--coral),var(--tangerine));transition:width .4s}
+  .plan-carte .sous{font-size:11.5px;color:var(--texte-faible);margin-top:9px;line-height:1.45}
+  .plan-carte .sous b{color:var(--tangerine);font-weight:600}
+  .sidebar-bas .btn{width:100%;justify-content:center}
+  .sidebar-bas .retour{text-align:center;font-size:12.5px;color:var(--texte-faible);padding:4px}
+  .sidebar-bas .retour:hover{color:var(--coral)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:13px;border:none;cursor:pointer;font-weight:600;font-size:14.5px;line-height:1;transition:transform .16s,box-shadow .16s,background .16s}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+  .btn-coral{background:linear-gradient(135deg,var(--coral),#ff8a5c);color:#1a0e08;box-shadow:0 12px 26px -12px rgba(255,107,74,.55), inset 0 1px 0 rgba(255,255,255,.25)}
+  .btn-coral:hover:not(:disabled){transform:translateY(-2px)}
+  .btn-ghost{background:transparent;color:var(--ivoire);border:1px solid rgba(244,236,223,.18)}
+  .btn-ghost:hover:not(:disabled){background:rgba(244,236,223,.05);border-color:rgba(244,236,223,.32)}
+  .btn-tangerine{background:rgba(255,161,74,.14);color:var(--tangerine);border:1px solid rgba(255,161,74,.35)}
+  .btn-tangerine:hover:not(:disabled){background:rgba(255,161,74,.22)}
+  .btn-petit{padding:9px 14px;font-size:13px;border-radius:11px}
+  .btn-ico{width:32px;height:32px;padding:0;border-radius:10px;display:inline-flex;align-items:center;justify-content:center}
+
+  /* ---------- Zone principale ---------- */
+  .contenu{margin-left:262px;position:relative;z-index:1;max-width:1180px;padding:34px 40px 70px}
+  .entete{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+  .entete h1{font-family:var(--serif);font-weight:600;font-size:clamp(26px,3vw,34px);letter-spacing:-.4px}
+  .entete .date{color:var(--texte-faible);font-size:14px;margin-top:3px}
+  .entete .date b{color:var(--texte-doux);font-weight:600}
+  .entete-actions{display:flex;gap:10px;align-items:center}
+
+  .banniere{
+    display:none;align-items:center;gap:14px;background:linear-gradient(120deg,rgba(255,107,74,.13),rgba(255,161,74,.09));
+    border:1px solid rgba(255,107,74,.4);border-radius:16px;padding:14px 18px;margin-bottom:22px;
+  }
+  .banniere .icone{width:34px;height:34px;border-radius:11px;flex:none;display:grid;place-items:center;background:var(--coral);color:#1a0e08}
+  .banniere p{flex:1;font-size:14px;color:var(--texte-doux)}
+  .banniere p strong{color:var(--ivoire);font-weight:600}
+
+  .grille{display:grid;grid-template-columns:420px 1fr;gap:22px;align-items:start}
+
+  .panneau{background:var(--panneau);border:1px solid var(--ligne);border-radius:24px;box-shadow:var(--ombre-chaude);overflow:hidden}
+  .panneau-entete{padding:18px 22px;border-bottom:1px solid var(--ligne);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .panneau-entete h2{font-size:15px;font-weight:700;letter-spacing:.01em;display:flex;align-items:center;gap:9px}
+  .panneau-entete h2 svg{width:17px;height:17px;color:var(--coral)}
+  .panneau-entete .pastille{font-size:11.5px;font-weight:700;color:var(--tangerine);background:rgba(255,161,74,.1);border:1px solid rgba(255,161,74,.25);padding:2px 9px;border-radius:99px}
+  .panneau-corps{padding:20px 22px}
+
+  /* Ajout collaborateur */
+  .ajout{display:flex;gap:10px;margin-bottom:16px}
+  .ajout input{
+    flex:1;background:rgba(20,16,13,.6);border:1px solid rgba(244,236,223,.14);border-radius:12px;
+    padding:11px 14px;color:var(--ivoire);font-family:var(--sans);font-size:14.5px;min-width:0;
+    transition:border-color .18s,box-shadow .18s;
+  }
+  .ajout input::placeholder{color:var(--texte-faible)}
+  .ajout input:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 3px rgba(255,107,74,.16)}
+  .ajout .btn{flex:none}
+
+  .liste-collab{display:flex;flex-direction:column;gap:10px}
+  .collab-carte{
+    background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:14px 16px;
+    display:flex;align-items:center;gap:13px;transition:border-color .18s,transform .18s;
+  }
+  .collab-carte:hover{border-color:rgba(255,161,74,.25);transform:translateX(2px)}
+  .avatar{width:40px;height:40px;border-radius:13px;flex:none;display:grid;place-items:center;font-weight:700;font-size:13.5px;color:#1a0e08}
+  .avatar.c1{background:linear-gradient(135deg,#ff9a76,#ff6b4a)}
+  .avatar.c2{background:linear-gradient(135deg,#ffc18a,#ffa14a)}
+  .avatar.c3{background:linear-gradient(135deg,#f4a08c,#e07a5f)}
+  .avatar.c4{background:linear-gradient(135deg,#ffb08a,#ff7a5c)}
+  .avatar.c5{background:linear-gradient(135deg,#ffd0a1,#ff9d4a)}
+  .collab-infos{flex:1;min-width:0}
+  .collab-nom{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .collab-sous{font-size:12px;color:var(--texte-faible);margin-top:2px}
+  .collab-actions{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex:none}
+  .collab-actions .prochain{font-size:11.5px;font-weight:700;color:var(--coral);background:rgba(255,107,74,.1);border:1px solid rgba(255,107,74,.22);padding:3px 10px;border-radius:99px;white-space:nowrap}
+  .collab-actions .prochain.tangerine{color:var(--tangerine);background:rgba(255,161,74,.1);border-color:rgba(255,161,74,.25)}
+  .collab-actions .boutons{display:flex;gap:6px}
+  .vide-etat{text-align:center;padding:34px 16px;color:var(--texte-faible)}
+  .vide-etat .grand{font-size:30px;font-family:var(--serif);color:var(--texte-doux);display:block;margin-bottom:6px}
+  .vide-etat p{font-size:13.5px;max-width:260px;margin:0 auto}
+
+  /* Formulaire réunion */
+  .champ{margin-bottom:15px}
+  .champ label{display:block;font-size:12.5px;font-weight:600;color:var(--ivoire);margin-bottom:6px;letter-spacing:.02em}
+  .champ label small{color:var(--texte-faible);font-weight:500}
+  .champ select,.champ input[type="number"],.champ textarea{
+    width:100%;background:rgba(20,16,13,.6);border:1px solid rgba(244,236,223,.14);border-radius:12px;
+    padding:11px 13px;color:var(--ivoire);font-family:var(--sans);font-size:14px;
+    transition:border-color .18s,box-shadow .18s;resize:vertical;
+  }
+  .champ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23c9bcaa' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:36px;cursor:pointer}
+  .champ select:focus,.champ input[type="number"]:focus,.champ textarea:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 3px rgba(255,107,74,.16)}
+  .champ textarea{min-height:64px}
+  .champ select option{background:var(--panneau);color:var(--ivoire)}
+  .ligne-jours{display:flex;align-items:center;gap:12px}
+  .ligne-jours input{width:90px;flex:none}
+  .ligne-jours .hint{font-size:12.5px;color:var(--texte-faible)}
+  .reunion-note{font-size:12px;color:var(--texte-faible);background:rgba(255,161,74,.06);border:1px dashed rgba(255,161,74,.25);border-radius:11px;padding:9px 12px;margin-bottom:15px;line-height:1.5}
+
+  /* Synthèse */
+  .synthese{display:none;margin-top:20px;background:linear-gradient(160deg,#241a13,#1c1510);border:1px solid rgba(255,107,74,.3);border-radius:20px;padding:22px 22px 20px;box-shadow:0 0 60px -24px rgba(255,107,74,.35)}
+  .synthese-entete{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+  .synthese-entete .spark{width:34px;height:34px;border-radius:11px;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,var(--coral),var(--tangerine));color:#1a0e08}
+  .synthese-entete h3{font-family:var(--serif);font-weight:600;font-size:17.5px}
+  .synthese-entete .badge-ia{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tangerine);border:1px solid rgba(255,161,74,.35);border-radius:99px;padding:2px 8px;margin-left:auto;flex:none}
+  .synthese-date{font-size:12.5px;color:var(--texte-faible);margin:2px 0 16px}
+  .bloc-synthese{margin-top:14px}
+  .bloc-titre{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px}
+  .bloc-titre svg{width:14px;height:14px}
+  .bloc-titre .compte{margin-left:auto;font-size:11px;color:var(--texte-faible);letter-spacing:0;text-transform:none;font-weight:500}
+  .bloc-liste{list-style:none;display:flex;flex-direction:column;gap:6px}
+  .bloc-liste li{
+    display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:var(--texte-doux);
+    background:rgba(20,16,13,.45);border:1px solid var(--ligne);border-radius:11px;padding:9px 12px;line-height:1.5;
+  }
+  .bloc-liste li .pastille{width:6px;height:6px;border-radius:50%;flex:none;margin-top:7px}
+  .avancees .bloc-titre{color:var(--vert)}
+  .avancees li .pastille{background:var(--vert);box-shadow:0 0 8px rgba(123,196,127,.7)}
+  .actions .bloc-titre{color:var(--tangerine)}
+  .actions li{cursor:pointer;transition:border-color .15s}
+  .actions li:hover{border-color:rgba(255,161,74,.35)}
+  .actions li .case{width:16px;height:16px;border-radius:5px;flex:none;margin-top:2px;border:1.5px solid rgba(244,236,223,.32);display:grid;place-items:center;transition:background .15s,border-color .15s}
+  .actions li.faite .case{background:var(--coral);border-color:var(--coral);color:#1a0e08}
+  .actions li.faite span{text-decoration:line-through;color:var(--texte-faible)}
+  .sujets .bloc-titre{color:var(--coral)}
+  .sujets li .pastille{background:var(--coral);box-shadow:0 0 8px rgba(255,107,74,.6)}
+  .synthese-pied{margin-top:18px;padding-top:16px;border-top:1px solid var(--ligne);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .prochain-badge{
+    display:inline-flex;align-items:center;gap:9px;background:rgba(255,107,74,.12);border:1px solid rgba(255,107,74,.35);
+    border-radius:12px;padding:9px 14px;font-size:13px;font-weight:600;color:var(--ivoire);
+  }
+  .prochain-badge svg{width:16px;height:16px;color:var(--coral);flex:none}
+  .prochain-badge .quand{color:var(--coral);font-weight:700}
+  .synthese-vide{display:none;font-size:13.5px;color:var(--texte-faible);padding:6px 0}
+
+  /* Historique */
+  .historique{margin-top:22px}
+  .historique h3{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--texte-faible);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .historique h3 svg{width:15px;height:15px}
+  .hist-liste{display:flex;flex-direction:column;gap:9px}
+  .hist-item{
+    display:flex;align-items:center;gap:12px;background:var(--carte);border:1px solid var(--ligne);
+    border-radius:13px;padding:11px 14px;cursor:pointer;transition:border-color .15s,transform .15s;
+  }
+  .hist-item:hover{border-color:rgba(255,161,74,.3);transform:translateX(2px)}
+  .hist-item .avatar{width:30px;height:30px;border-radius:10px;font-size:11.5px}
+  .hist-item .infos{flex:1;min-width:0}
+  .hist-item .qui{font-size:13.5px;font-weight:600}
+  .hist-item .quand{font-size:11.5px;color:var(--texte-faible)}
+  .hist-item .fleche{color:var(--texte-faible);font-size:13px;flex:none}
+  .hist-item.active{border-color:var(--coral)}
+
+  .toast{
+    position:fixed;bottom:26px;right:26px;z-index:100;display:flex;align-items:center;gap:10px;
+    background:var(--carte-2);border:1px solid rgba(255,161,74,.35);border-radius:14px;
+    padding:12px 18px;font-size:13.5px;color:var(--ivoire);box-shadow:0 18px 40px -14px rgba(0,0,0,.7);
+    opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .25s,transform .25s;
+  }
+  .toast.visible{opacity:1;transform:translateY(0)}
+  .toast svg{width:17px;height:17px;color:var(--coral);flex:none}
+
+  @media (max-width:1020px){
+    .grille{grid-template-columns:1fr}
+  }
+  @media (max-width:880px){
+    .sidebar{position:static;width:auto;flex-direction:row;align-items:center;padding:14px 18px;border-right:none;border-bottom:1px solid var(--ligne);gap:14px}
+    .nav{margin:0 0 0 auto;flex-direction:row;gap:2px}
+    .nav a{padding:8px 11px;font-size:13.5px}
+    .nav a span{display:none}
+    .sidebar-bas{display:none}
+    .contenu{margin-left:0;padding:24px 18px 60px}
+  }
+  @media (max-width:520px){
+    .entete{flex-direction:column;align-items:flex-start}
+    .ajout{flex-direction:column}
+    .ajout .btn{width:100%}
+    .collab-actions{flex-direction:row;align-items:center;justify-content:space-between;width:100%}
+    .collab-carte{flex-wrap:wrap}
+  }
+</style>
+</head>
+<body>
+
+<!-- ======= SIDEBAR ======= -->
+<aside class="sidebar">
+  <a href="index.html" class="logo" aria-label="MémoireManager — retour au site">
+    <span class="logo-mark">M</span>
+    <span class="logo-nom">Mémoire<em>Manager</em></span>
+  </a>
+
+  <nav class="nav" aria-label="Navigation de l'application">
+    <a href="#" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+      <span>Tableau de bord</span>
+    </a>
+    <a href="#collaborateurs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.6c2.7.2 4.6 1.9 5 4.4"/></svg>
+      <span>Collaborateurs</span>
+      <span class="compteur" id="navCompteur">0</span>
+    </a>
+    <a href="#reunion">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+      <span>Réunions 1:1</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-bas">
+    <div class="plan-carte">
+      <div class="entete"><strong>Offre Gratuite</strong><span id="jaugeTexte">0/3</span></div>
+      <div class="jauge"><i id="jaugeBarre" style="width:0%"></i></div>
+      <div class="sous" id="planSous">Collaborateurs utilisés : <b id="planCompte">0</b> sur 3.</div>
+    </div>
+    <a href="index.html#offres" class="btn btn-coral">Passer à Pro — 12 €/mois</a>
+    <a href="index.html" class="retour">← Retour au site</a>
+  </div>
+</aside>
+
+<!-- ======= CONTENU ======= -->
+<main class="contenu">
+  <header class="entete">
+    <div>
+      <h1>Tableau de bord</h1>
+      <p class="date">Aujourd'hui : <b id="dateJour"></b></p>
+    </div>
+    <div class="entete-actions">
+      <button class="btn btn-ghost btn-petit" id="btnReinitialiser">Réinitialiser la démo</button>
+      <a href="index.html#essai" class="btn btn-coral btn-petit">Essai gratuit</a>
+    </div>
+  </header>
+
+  <!-- Bannière limite atteinte -->
+  <div class="banniere" id="banniereLimite">
+    <span class="icone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M12 2 2 19h20L12 2Z"/><path d="M12 10v4M12 17h.01"/></svg>
+    </span>
+    <p><strong>Limite de l'offre Gratuite atteinte.</strong> Vous suivez déjà 3 collaborateurs. Passez à Pro pour un suivi illimité — et activez l'agent IA de rappel.</p>
+    <a href="index.html#offres" class="btn btn-coral btn-petit">Découvrir Pro</a>
+  </div>
+
+  <div class="grille">
+
+    <!-- ====== COLLABORATEURS ====== -->
+    <section class="panneau" id="collaborateurs">
+      <div class="panneau-entete">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.6c2.7.2 4.6 1.9 5 4.4"/></svg>
+          Collaborateurs
+        </h2>
+        <span class="pastille" id="compteurCollab">0/3</span>
+      </div>
+      <div class="panneau-corps">
+        <div class="ajout">
+          <input type="text" id="inputNom" placeholder="Prénom et nom…" maxlength="40" autocomplete="off">
+          <button class="btn btn-coral" id="btnAjouter">Ajouter</button>
+        </div>
+        <div class="liste-collab" id="listeCollab"></div>
+        <div class="vide-etat" id="videCollab">
+          <span class="grand">Votre équipe commence ici</span>
+          <p>Ajoutez un premier collaborateur pour ouvrir sa fiche de suivi.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== RÉUNION 1:1 ====== -->
+    <section class="panneau" id="reunion">
+      <div class="panneau-entete">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+          Nouveau 1:1
+        </h2>
+        <span class="pastille">Synthèse automatique</span>
+      </div>
+      <div class="panneau-corps">
+
+        <div class="reunion-note">
+          Remplissez les trois champs pendant votre échange — MémoireManager rédige la synthèse (actions + sujets) et programme le prochain 1:1.
+        </div>
+
+        <div class="champ">
+          <label for="selCollab">Collaborateur</label>
+          <select id="selCollab"></select>
+        </div>
+
+        <div class="champ">
+          <label>Ce que tu as bouclé <small>· depuis le dernier 1:1</small></label>
+          <textarea id="chBoucle" placeholder="Ex. : le devis Luna est parti, j'ai corrigé le bug d'affichage…"></textarea>
+        </div>
+
+        <div class="champ">
+          <label>Ce que tu as dans le pipe <small>· à venir</small></label>
+          <textarea id="chPipe" placeholder="Ex. : je finalise la maquette v2, je dois relancer le prestataire…"></textarea>
+        </div>
+
+        <div class="champ">
+          <label>Point de blocage <small>· où tu es coincé</small></label>
+          <textarea id="chBlocage" placeholder="Ex. : j'attends l'accès à l'API facturation…"></textarea>
+        </div>
+
+        <div class="champ">
+          <label>Prochain 1:1 <small>· dans combien de jours ?</small></label>
+          <div class="ligne-jours">
+            <input type="number" id="chJours" min="1" max="60" value="14" inputmode="numeric">
+            <span class="hint">jours · la date sera calculée automatiquement</span>
+          </div>
+        </div>
+
+        <button class="btn btn-coral" id="btnGenerer" style="width:100%">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+          Générer la synthèse
+        </button>
+
+        <!-- Synthèse générée -->
+        <div class="synthese" id="synthese">
+          <div class="synthese-entete">
+            <span class="spark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+            </span>
+            <h3 id="syntheseTitre">Synthèse du 1:1</h3>
+            <span class="badge-ia">IA de synthèse</span>
+          </div>
+          <p class="synthese-date" id="syntheseDate"></p>
+
+          <div class="bloc-synthese avancees" id="blocAvancees">
+            <div class="bloc-titre">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              Ce qui a avancé
+              <span class="compte" id="compteAvancees"></span>
+            </div>
+            <ul class="bloc-liste" id="listeAvancees"></ul>
+            <p class="synthese-vide" id="videAvancees">Rien de signalé : l'essentiel des échanges a porté sur la suite.</p>
+          </div>
+
+          <div class="bloc-synthese actions" id="blocActions">
+            <div class="bloc-titre">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Actions à suivre
+              <span class="compte" id="compteActions"></span>
+            </div>
+            <ul class="bloc-liste" id="listeActions"></ul>
+            <p class="synthese-vide" id="videActions">Aucune action détectée : tout est déjà bouclé. Bien joué !</p>
+          </div>
+
+          <div class="bloc-synthese sujets" id="blocSujets">
+            <div class="bloc-titre">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+              À aborder au prochain 1:1
+              <span class="compte" id="compteSujets"></span>
+            </div>
+            <ul class="bloc-liste" id="listeSujets"></ul>
+            <p class="synthese-vide" id="videSujets">Aucun point particulier : le prochain échange peut aller à l'essentiel.</p>
+          </div>
+
+          <div class="synthese-pied">
+            <span class="prochain-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+              Prochain 1:1 : <span class="quand" id="prochainQuand"></span> · <span id="prochainDate"></span>
+            </span>
+            <span class="hint" style="font-size:12px;color:var(--texte-faible)">Le rappel sera envoyé automatiquement en offre Pro.</span>
+          </div>
+        </div>
+
+        <!-- Historique -->
+        <div class="historique">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            Historique des 1:1
+          </h3>
+          <div class="hist-liste" id="histListe"></div>
+          <div class="vide-etat" id="videHist" style="padding:20px 10px">
+            <p>Aucun 1:1 enregistré pour l'instant. La mémoire se construit échange après échange.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+  <span id="toastTexte"></span>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= ÉTAT & STOCKAGE ================= */
+  var CLE = "mm_v1";
+  var LIMITE = 3; // offre gratuite
+
+  var etat = charger();
+  var syntheseCourante = null; // reunion affichée dans le panneau
+
+  function charger(){
+    try{
+      var brut = localStorage.getItem(CLE);
+      if(brut){
+        var obj = JSON.parse(brut);
+        if(obj && Array.isArray(obj.collaborateurs)) return obj;
+      }
+    }catch(e){ console.warn("Lecture localStorage impossible", e); }
+    return { collaborateurs: [], plan: "gratuit" };
+  }
+  function sauvegarder(){
+    try{ localStorage.setItem(CLE, JSON.stringify(etat)); }
+    catch(e){ console.warn("Écriture localStorage impossible", e); }
+  }
+
+  /* ================= OUTILS ================= */
+  function uid(prefixo){
+    return prefixo + "-" + (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.floor(Math.random()*1e6));
+  }
+  function aujourdhui(){
+    var d = new Date(); d.setHours(0,0,0,0); return d;
+  }
+  function isoDate(d){
+    // Date locale (pas UTC) pour éviter un décalage d'un jour selon le fuseau horaire
+    var p = function(n){ return (n < 10 ? "0" : "") + n; };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+  function ajouterJours(n){
+    var d = aujourdhui(); d.setDate(d.getDate() + n); return d;
+  }
+  function formaterDate(d){
+    return new Intl.DateTimeFormat("fr-FR", { weekday:"long", day:"numeric", month:"long", year:"numeric" }).format(d);
+  }
+  function formaterDateCourte(d){
+    return new Intl.DateTimeFormat("fr-FR", { day:"numeric", month:"short", year:"numeric" }).format(d);
+  }
+  function capitaliser(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+  function libelleJours(n){
+    if(n === 0) return "aujourd'hui";
+    if(n === 1) return "demain";
+    return "dans " + n + " jours";
+  }
+  function initiales(nom){
+    return nom.trim().split(/\s+/).slice(0,2).map(function(m){ return m.charAt(0).toUpperCase(); }).join("") || "?";
+  }
+  function couleurPour(id, index){
+    return "c" + ((index % 5) + 1);
+  }
+
+  /* ================= MOTEUR DE SYNTHÈSE (règles) ================= */
+  var VERBES_ACTION = /(envoyer|relancer|terminer|finaliser|pr[ée]parer|appeler|contacter|faire|boucler|livrer|planifier|organiser|cr[ée]er|corriger|valider|signer|r[ée]pondre|mettre \u00e0 jour|mettre en ligne|d[ée]ployer|tester|[ée]crire|r[ée]diger|pr[ée]senter|publier|programmer|v[ée]rifier|revoir|actualiser|compl[ée]ter|transmettre|partager|d[ée]marrer|commencer|continuer|pr[ée]voir|estimer|d[ée]cider|arbitrer|pr[ée]venir|informer|suivre|s[ée]curiser|relancer|faire un point|monter|mettre en place|pr[ée]parer)/i;
+  var MARQUEURS_FUTUR = /\b(je vais|je dois|il faut|il faudrait|on va|on devrait|j'ai pr[ée]vu|je compte|je pr[ée]vois|nous allons|a faire|a pr[ée]voir|d'ici|avant la fin|avant vendredi|la semaine prochaine|cette semaine|demain|la semaine|prochaine|bient[ôo]t|en cours de|je finis|je termine|je dois encore)\b/i;
+  var MARQUEURS_SUJET = /\b(il faudrait|on devrait|question|sujet|r[ée]fl[ée]chir|discuter|voir ensemble|en parler|arbitrer|d[ée]cider|valider ensemble|point \u00e0 aborder|revoir ensemble|on pourra|a voir|a arbitrer|a d[ée]cider)\b/i;
+  var MARQUEURS_BLOCAGE = /\b(bloqu[ée]|blocage|en attente|j'attends|j'attends toujours|d[ée]pend de|je n'arrive pas|je n'y arrive pas|probl[èe]me|souci|frein|retard|retard[ée]|coinc[ée]|je gal[èe]re|difficile|impossible|manque|pas encore re[çc]u|toujours pas)\b/i;
+
+  function decouperPhrases(texte){
+    return texte
+      .replace(/\r/g, "")
+      .split(/\n+|(?<=[.!?])\s+/)
+      .map(function(s){ return s.trim().replace(/^[-•*]\s*/, ""); })
+      .filter(function(s){ return s.length > 1; });
+  }
+  function ajouterUnique(liste, phrase){
+    var p = phrase.toLowerCase();
+    for(var i = 0; i < liste.length; i++){
+      if(liste[i].toLowerCase() === p) return;
+    }
+    liste.push(phrase);
+  }
+
+  function genererSynthese(champs){
+    var boucle  = champs.boucle  || "";
+    var pipe    = champs.pipe    || "";
+    var blocage = champs.blocage || "";
+    var avance  = [];
+    var actions = [];
+    var sujets  = [];
+
+    // Classifieur : priorité au sujet « à discuter » quand aucun verbe d'action concret
+    function classerPhrase(phrase){
+      var a = VERBES_ACTION.test(phrase); // verbe d'action concret (finaliser, relancer…)
+      var f = MARQUEURS_FUTUR.test(phrase); // intention future (je dois, je vais…)
+      var s = MARQUEURS_SUJET.test(phrase); // intention de discussion (il faudrait discuter…)
+      if(s && !a) return "sujet";
+      if(a || f)  return "action";
+      return "autre";
+    }
+
+    // 1. « Ce que tu as bouclé » → avancées (sauf intentions futures / sujets)
+    decouperPhrases(boucle).forEach(function(phrase){
+      var c = classerPhrase(phrase);
+      if(c === "action")      ajouterUnique(actions, phrase);
+      else if(c === "sujet")  ajouterUnique(sujets, phrase);
+      else                    ajouterUnique(avance, phrase);
+    });
+
+    // 2. « Ce que tu as dans le pipe » → actions si verbe d'action ou marqueur futur, sinon sujet à suivre
+    decouperPhrases(pipe).forEach(function(phrase){
+      var c = classerPhrase(phrase);
+      if(c === "action")      ajouterUnique(actions, phrase);
+      else                    ajouterUnique(sujets, phrase);
+    });
+
+    // 3. « Point de blocage » → sujets à aborder (prioritaires)
+    decouperPhrases(blocage).forEach(function(phrase){
+      var prefixe = MARQUEURS_BLOCAGE.test(phrase) ? "Blocage : " : "";
+      ajouterUnique(sujets, prefixe + phrase);
+    });
+
+    return { avance: avance, actions: actions, sujets: sujets };
+  }
+
+  /* ================= CRÉATION DE DONNÉES DE DÉMO ================= */
+  function creerReunion(nomCollab, boucle, pipe, blocage, joursAvant){
+    var synthese = genererSynthese({ boucle: boucle, pipe: pipe, blocage: blocage });
+    return {
+      id: uid("r"),
+      date: isoDate(aujourdhui()),
+      collaborateur: nomCollab,
+      boucle: boucle, pipe: pipe, blocage: blocage,
+      joursAvant: joursAvant,
+      prochainDate: isoDate(ajouterJours(joursAvant)),
+      synthese: synthese,
+      actionsFaites: []
+    };
+  }
+  function creerCollab(nom, index){
+    return {
+      id: uid("c"),
+      nom: nom,
+      couleur: couleurPour(null, index),
+      creeLe: isoDate(aujourdhui()),
+      prochainDans: 14,
+      prochainDate: isoDate(ajouterJours(14)),
+      reunions: []
+    };
+  }
+  function amorcer(){
+    var camille = creerCollab("Camille Rousseau", 0);
+    camille.reunions.push(creerReunion(
+      camille.nom,
+      "Le devis Luna est parti hier. J'ai aussi corrigé le bug d'affichage sur la page produit.",
+      "Je dois finaliser la maquette v2 et préparer la présentation client de la semaine prochaine.",
+      "J'attends l'accès à l'API de facturation, sans lui je ne peux pas terminer l'intégration.",
+      6
+    ));
+    camille.prochainDans = 6;
+    camille.prochainDate = isoDate(ajouterJours(6));
+
+    var karim = creerCollab("Karim Benali", 1);
+    karim.reunions.push(creerReunion(
+      karim.nom,
+      "Le composant tableau de bord est livré et testé.",
+      "Je dois relancer le prestataire pour les visuels, puis déployer la refonte du tunnel d'inscription.",
+      "",
+      2
+    ));
+    karim.prochainDans = 2;
+    karim.prochainDate = isoDate(ajouterJours(2));
+
+    etat = { collaborateurs: [camille, karim], plan: "gratuit" };
+    sauvegarder();
+  }
+
+  /* ================= RENDU ================= */
+  var el = {
+    inputNom: document.getElementById("inputNom"),
+    btnAjouter: document.getElementById("btnAjouter"),
+    listeCollab: document.getElementById("listeCollab"),
+    videCollab: document.getElementById("videCollab"),
+    compteurCollab: document.getElementById("compteurCollab"),
+    navCompteur: document.getElementById("navCompteur"),
+    jaugeBarre: document.getElementById("jaugeBarre"),
+    jaugeTexte: document.getElementById("jaugeTexte"),
+    planCompte: document.getElementById("planCompte"),
+    banniere: document.getElementById("banniereLimite"),
+    selCollab: document.getElementById("selCollab"),
+    chJours: document.getElementById("chJours"),
+    chBoucle: document.getElementById("chBoucle"),
+    chPipe: document.getElementById("chPipe"),
+    chBlocage: document.getElementById("chBlocage"),
+    btnGenerer: document.getElementById("btnGenerer"),
+    synthese: document.getElementById("synthese"),
+    syntheseTitre: document.getElementById("syntheseTitre"),
+    syntheseDate: document.getElementById("syntheseDate"),
+    prochainQuand: document.getElementById("prochainQuand"),
+    prochainDate: document.getElementById("prochainDate"),
+    listeAvancees: document.getElementById("listeAvancees"),
+    listeActions: document.getElementById("listeActions"),
+    listeSujets: document.getElementById("listeSujets"),
+    compteAvancees: document.getElementById("compteAvancees"),
+    compteActions: document.getElementById("compteActions"),
+    compteSujets: document.getElementById("compteSujets"),
+    videAvancees: document.getElementById("videAvancees"),
+    videActions: document.getElementById("videActions"),
+    videSujets: document.getElementById("videSujets"),
+    histListe: document.getElementById("histListe"),
+    videHist: document.getElementById("videHist"),
+    toast: document.getElementById("toast"),
+    toastTexte: document.getElementById("toastTexte")
+  };
+
+  function majCompteurs(){
+    var n = etat.collaborateurs.length;
+    el.compteurCollab.textContent = n + "/" + LIMITE;
+    el.navCompteur.textContent = n;
+    var pct = Math.min(100, Math.round(n / LIMITE * 100));
+    el.jaugeBarre.style.width = pct + "%";
+    el.jaugeTexte.textContent = n + "/" + LIMITE;
+    el.planCompte.textContent = n;
+    el.banniere.style.display = n >= LIMITE ? "flex" : "none";
+  }
+
+  function renderCollaborateurs(){
+    el.listeCollab.innerHTML = "";
+    var n = etat.collaborateurs.length;
+    el.videCollab.style.display = n === 0 ? "block" : "none";
+
+    etat.collaborateurs.forEach(function(c){
+      var carte = document.createElement("div");
+      carte.className = "collab-carte";
+
+      var av = document.createElement("span");
+      av.className = "avatar " + c.couleur;
+      av.textContent = initiales(c.nom);
+
+      var infos = document.createElement("div");
+      infos.className = "collab-infos";
+      var nomEl = document.createElement("div");
+      nomEl.className = "collab-nom";
+      nomEl.textContent = c.nom;
+      var sousEl = document.createElement("div");
+      sousEl.className = "collab-sous";
+      sousEl.textContent = c.reunions.length === 0
+        ? "Aucun 1:1 enregistré"
+        : (c.reunions.length === 1 ? "1 synthèse de 1:1" : c.reunions.length + " synthèses de 1:1");
+      infos.appendChild(nomEl);
+      infos.appendChild(sousEl);
+
+      var actions = document.createElement("div");
+      actions.className = "collab-actions";
+      var prochain = document.createElement("span");
+      prochain.className = "prochain" + (c.prochainDans <= 3 ? " tangerine" : "");
+      prochain.textContent = "1:1 " + libelleJours(c.prochainDans) + " · " + formaterDateCourte(new Date(c.prochainDate));
+      var boutons = document.createElement("div");
+      boutons.className = "boutons";
+
+      var btnReu = document.createElement("button");
+      btnReu.className = "btn btn-tangerine btn-petit";
+      btnReu.textContent = "Nouveau 1:1";
+      btnReu.addEventListener("click", function(){
+        el.selCollab.value = c.id;
+        document.getElementById("reunion").scrollIntoView({ behavior: "smooth", block: "start" });
+        el.chBoucle.focus();
+      });
+
+      var btnSup = document.createElement("button");
+      btnSup.className = "btn btn-ghost btn-ico";
+      btnSup.title = "Supprimer " + c.nom;
+      btnSup.setAttribute("aria-label", "Supprimer " + c.nom);
+      btnSup.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>';
+      btnSup.addEventListener("click", function(){ supprimerCollab(c.id); });
+
+      boutons.appendChild(btnReu);
+      boutons.appendChild(btnSup);
+      actions.appendChild(prochain);
+      actions.appendChild(boutons);
+
+      carte.appendChild(av);
+      carte.appendChild(infos);
+      carte.appendChild(actions);
+      el.listeCollab.appendChild(carte);
+    });
+  }
+
+  function renderSelect(){
+    el.selCollab.innerHTML = "";
+    if(etat.collaborateurs.length === 0){
+      var optVide = document.createElement("option");
+      optVide.value = "";
+      optVide.textContent = "Ajoutez d'abord un collaborateur…";
+      el.selCollab.appendChild(optVide);
+      el.selCollab.disabled = true;
+      return;
+    }
+    el.selCollab.disabled = false;
+    etat.collaborateurs.forEach(function(c){
+      var opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.nom;
+      el.selCollab.appendChild(opt);
+    });
+  }
+
+  function renderHistorique(){
+    // toutes les réunions, triées de la plus récente à la plus ancienne
+    var toutes = [];
+    etat.collaborateurs.forEach(function(c){
+      c.reunions.forEach(function(r){
+        toutes.push({ r: r, c: c });
+      });
+    });
+    toutes.sort(function(a, b){ return b.r.date.localeCompare(a.r.date); });
+
+    el.histListe.innerHTML = "";
+    el.videHist.style.display = toutes.length === 0 ? "block" : "none";
+
+    toutes.forEach(function(item){
+      var div = document.createElement("div");
+      div.className = "hist-item";
+      if(syntheseCourante && syntheseCourante.id === item.r.id) div.classList.add("active");
+
+      var av = document.createElement("span");
+      av.className = "avatar " + item.c.couleur;
+      av.textContent = initiales(item.c.nom);
+
+      var infos = document.createElement("div");
+      infos.className = "infos";
+      var qui = document.createElement("div");
+      qui.className = "qui";
+      qui.textContent = item.c.nom;
+      var quand = document.createElement("div");
+      quand.className = "quand";
+      quand.textContent = capitaliser(formaterDate(new Date(item.r.date + "T12:00:00"))) + " · prochain 1:1 " + libelleJours(item.c.prochainDans);
+      infos.appendChild(qui);
+      infos.appendChild(quand);
+
+      var fleche = document.createElement("span");
+      fleche.className = "fleche";
+      fleche.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 18l6-6-6-6"/></svg>';
+
+      div.appendChild(av);
+      div.appendChild(infos);
+      div.appendChild(fleche);
+      div.addEventListener("click", function(){ afficherSynthese(item.r, item.c); });
+      el.histListe.appendChild(div);
+    });
+  }
+
+  /* ================= AFFICHAGE D'UNE SYNTHÈSE ================= */
+  function remplirListe(ul, items, type, reunion){
+    ul.innerHTML = "";
+    items.forEach(function(texte, i){
+      var li = document.createElement("li");
+      if(type === "action"){
+        var fait = reunion.actionsFaites.indexOf(i) !== -1;
+        li.className = fait ? "faite" : "";
+        var caseEl = document.createElement("span");
+        caseEl.className = "case";
+        caseEl.innerHTML = fait
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" width="10" height="10"><path d="M20 6 9 17l-5-5"/></svg>'
+          : "";
+        var txt = document.createElement("span");
+        txt.textContent = texte;
+        li.appendChild(caseEl);
+        li.appendChild(txt);
+        li.title = fait ? "Marquer comme à faire" : "Marquer comme réalisée";
+        li.addEventListener("click", function(){
+          var pos = reunion.actionsFaites.indexOf(i);
+          if(pos === -1) reunion.actionsFaites.push(i);
+          else reunion.actionsFaites.splice(pos, 1);
+          sauvegarder();
+          remplirListe(ul, items, type, reunion);
+          majCompteurs();
+        });
+      } else {
+        var pastille = document.createElement("span");
+        pastille.className = "pastille";
+        var txt2 = document.createElement("span");
+        txt2.textContent = texte;
+        li.appendChild(pastille);
+        li.appendChild(txt2);
+      }
+      ul.appendChild(li);
+    });
+  }
+
+  function afficherSynthese(reunion, collab){
+    syntheseCourante = reunion;
+    var s = reunion.synthese;
+
+    el.synthese.style.display = "block";
+    el.syntheseTitre.textContent = "Synthèse du 1:1 · " + collab.nom;
+    el.syntheseDate.textContent = "Rédigée le " + capitaliser(formaterDate(new Date(reunion.date + "T12:00:00"))) + " — " + s.avance.length + " avancée(s), " + s.actions.length + " action(s), " + s.sujets.length + " sujet(s).";
+
+    el.compteAvancees.textContent = s.avance.length + " point(s)";
+    el.compteActions.textContent = s.actions.length + " engagement(s)";
+    el.compteSujets.textContent = s.sujets.length + " point(s)";
+    el.videAvancees.style.display = s.avance.length === 0 ? "block" : "none";
+    el.videActions.style.display = s.actions.length === 0 ? "block" : "none";
+    el.videSujets.style.display = s.sujets.length === 0 ? "block" : "none";
+
+    remplirListe(el.listeAvancees, s.avance, "point", reunion);
+    remplirListe(el.listeActions, s.actions, "action", reunion);
+    remplirListe(el.listeSujets, s.sujets, "point", reunion);
+
+    el.prochainQuand.textContent = libelleJours(collab.prochainDans);
+    el.prochainDate.textContent = capitaliser(formaterDate(new Date(collab.prochainDate + "T12:00:00")));
+
+    el.synthese.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /* ================= ACTIONS ================= */
+  function ajouterCollab(){
+    var nom = el.inputNom.value.trim().replace(/\s+/g, " ");
+    if(!nom){
+      toast("Indiquez le prénom et le nom du collaborateur.");
+      el.inputNom.focus();
+      return;
+    }
+    if(etat.collaborateurs.length >= LIMITE){
+      toast("Limite de l'offre Gratuite atteinte (3 collaborateurs). Passez à Pro !");
+      el.banniere.style.display = "flex";
+      document.getElementById("banniereLimite").scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    var collab = creerCollab(nom, etat.collaborateurs.length);
+    etat.collaborateurs.push(collab);
+    sauvegarder();
+    el.inputNom.value = "";
+    renderTout();
+    toast(capitaliser(nom) + " a rejoint votre équipe.");
+    el.inputNom.focus();
+  }
+
+  function supprimerCollab(id){
+    var c = etat.collaborateurs.filter(function(x){ return x.id === id; })[0];
+    if(!c) return;
+    if(!window.confirm("Supprimer " + c.nom + " et ses " + c.reunions.length + " synthèse(s) de 1:1 ?")) return;
+    etat.collaborateurs = etat.collaborateurs.filter(function(x){ return x.id !== id; });
+    sauvegarder();
+    renderTout();
+    toast(c.nom + " a été retiré(e) de votre équipe.");
+  }
+
+  function generer(){
+    if(etat.collaborateurs.length === 0){
+      toast("Ajoutez d'abord un collaborateur.");
+      el.inputNom.focus();
+      return;
+    }
+    var collabId = el.selCollab.value;
+    var collab = etat.collaborateurs.filter(function(x){ return x.id === collabId; })[0];
+    if(!collab){
+      toast("Sélectionnez un collaborateur.");
+      return;
+    }
+    var boucle  = el.chBoucle.value.trim();
+    var pipe    = el.chPipe.value.trim();
+    var blocage = el.chBlocage.value.trim();
+    if(!boucle && !pipe && !blocage){
+      toast("Remplissez au moins un des trois champs pour générer la synthèse.");
+      return;
+    }
+    var jours = parseInt(el.chJours.value, 10);
+    if(isNaN(jours) || jours < 1) jours = 14;
+    if(jours > 60) jours = 60;
+
+    var reunion = creerReunion(collab.nom, boucle, pipe, blocage, jours);
+    collab.reunions.unshift(reunion);
+    collab.prochainDans = jours;
+    collab.prochainDate = reunion.prochainDate;
+    sauvegarder();
+
+    el.chBoucle.value = ""; el.chPipe.value = ""; el.chBlocage.value = "";
+    renderTout();
+    afficherSynthese(reunion, collab);
+    toast("Synthèse générée et mémorisée pour " + collab.nom + ".");
+  }
+
+  function reinitialiser(){
+    if(!window.confirm("Effacer toutes les données de la démo et revenir aux données d'exemple ?")) return;
+    localStorage.removeItem(CLE);
+    etat = { collaborateurs: [], plan: "gratuit" };
+    amorcer();
+    syntheseCourante = null;
+    renderTout();
+    toast("Démo réinitialisée.");
+  }
+
+  function renderTout(){
+    majCompteurs();
+    renderCollaborateurs();
+    renderSelect();
+    renderHistorique();
+  }
+
+  function toast(msg){
+    el.toastTexte.textContent = msg;
+    el.toast.classList.add("visible");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ el.toast.classList.remove("visible"); }, 3200);
+  }
+
+  /* ================= INIT ================= */
+  document.getElementById("dateJour").textContent = capitaliser(formaterDate(aujourdhui()));
+
+  if(etat.collaborateurs.length === 0) amorcer();
+
+  el.btnAjouter.addEventListener("click", ajouterCollab);
+  el.inputNom.addEventListener("keydown", function(e){ if(e.key === "Enter") ajouterCollab(); });
+  el.btnGenerer.addEventListener("click", generer);
+  document.getElementById("btnReinitialiser").addEventListener("click", reinitialiser);
+
+  renderTout();
+})();
+</script>
+</body>
+</html>
