@@ -5,6 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MémoireManager — Ne perdez plus jamais le fil de vos 1:1</title>
 <meta name="description" content="MémoireManager garde en mémoire chaque échange avec vos collaborateurs : suivi des 1:1, synthèse automatique des réunions et agent IA qui rappelle les engagements. Essai gratuit.">
+<meta property="og:title" content="MémoireManager — La mémoire des managers">
+<meta property="og:description" content="Suivi des 1:1, synthèse automatique des réunions et agent IA qui rappelle les engagements. Essai gratuit, formule Pro à 12 €/mois.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "MémoireManager — La mémoire des managers",
+  "description": "Suivi des 1:1, synthèse automatique des réunions et agent IA qui rappelle les engagements. Essai gratuit, formule Pro à 12 €/mois.",
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "EUR",
+    "price": "0",
+    "availability": "https://schema.org/InStock"
+  }
+}
+</script>
+
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23ff6b4a'/%3E%3Ctext x='32' y='44' font-family='Georgia' font-size='36' font-weight='bold' fill='%2314100d' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -351,6 +370,12 @@
     .footer-inner{flex-direction:column;align-items:flex-start}
     .footer-inner .droits{margin-left:0}
   }
+
+  /* Révélation progressive au scroll (non intrusive) */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.visible{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none}}
+  @media print{.reveal{opacity:1!important;transform:none!important}}
 </style>
 </head>
 <body>
@@ -486,7 +511,7 @@
     <p class="sous-section">MémoireManager couvre tout le cycle du point 1:1 : avant, pendant et après l'échange. Chaque brique est pensée pour vous faire gagner du temps — et de la confiance.</p>
 
     <!-- 01 Suivi -->
-    <div class="fonction-row">
+    <div class="fonction-row reveal">
       <div>
         <div class="fonction-num">01 — Le suivi</div>
         <h3 class="fonction-titre">Chaque collaborateur a sa fiche. Rien ne tombe dans l'oubli.</h3>
@@ -515,7 +540,7 @@
     </div>
 
     <!-- 02 Bot -->
-    <div class="fonction-row">
+    <div class="fonction-row reveal">
       <div>
         <div class="fonction-num">02 — Le bot en réunion</div>
         <h3 class="fonction-titre">Le bot rejoint vos réunions, la synthèse s'écrit toute seule.</h3>
@@ -540,7 +565,7 @@
     </div>
 
     <!-- 03 Agent -->
-    <div class="fonction-row">
+    <div class="fonction-row reveal">
       <div>
         <div class="fonction-num">03 — L'agent IA de rappel</div>
         <h3 class="fonction-titre">L'agent rappelle les engagements. Jusqu'au bout.</h3>
@@ -564,14 +589,14 @@
 
   <!-- ======= TARIFS ======= -->
   <section class="section" id="offres">
-    <div class="tarifs-entete">
+    <div class="tarifs-entete reveal">
       <span class="etiquette">Tarifs</span>
       <h2 class="titre-section">Un prix simple, pour chaque étape.</h2>
       <p class="sous-section">Commencez gratuitement. Passez à Pro quand votre équipe grandit. Sans engagement, résiliable à tout moment.</p>
     </div>
 
     <div class="offres">
-      <article class="offre">
+      <article class="offre reveal">
         <h3>Gratuit</h3>
         <p class="pour">Pour découvrir la méthode et prendre le rythme des 1:1.</p>
         <div class="prix"><span class="montant">0 €</span><span class="mois">/ mois</span></div>
@@ -601,7 +626,7 @@
         <a href="#essai" class="btn btn-coral">Passer à Pro</a>
       </article>
 
-      <article class="offre">
+      <article class="offre reveal">
         <h3>Team</h3>
         <p class="pour">Pour les équipes qui grandissent et se multiplient.</p>
         <div class="prix"><span class="montant tangerine">29 €</span><span class="mois">/ mois</span></div>
@@ -622,7 +647,7 @@
 
   <!-- ======= ESSAI GRATUIT ======= -->
   <section class="section essai" id="essai">
-    <div class="essai-cadre">
+    <div class="essai-cadre reveal">
       <div class="essai-gauche">
         <span class="etiquette">Essai gratuit</span>
         <h2>Essayez MémoireManager, gratuitement.</h2>
@@ -763,6 +788,23 @@
     window.addEventListener("scroll", surligner, {passive:true});
     surligner();
   })();
+</script>
+<script>
+/* Révélation au scroll — IntersectionObserver, fallback si absent */
+(function(){
+  var reveals = document.querySelectorAll(".reveal");
+  if(!reveals.length) return;
+  if("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){ entry.target.classList.add("visible"); io.unobserve(entry.target); }
+      });
+    }, {threshold: .12});
+    reveals.forEach(function(el){ io.observe(el); });
+  } else {
+    reveals.forEach(function(el){ el.classList.add("visible"); });
+  }
+})();
 </script>
 </body>
 </html>
