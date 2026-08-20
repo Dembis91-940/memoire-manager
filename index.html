@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MémoireManager — Ne perdez plus jamais le fil de vos 1:1</title>
 <meta name="description" content="MémoireManager garde en mémoire chaque échange avec vos collaborateurs : suivi des 1:1, synthèse automatique des réunions et agent IA qui rappelle les engagements. Essai gratuit.">
 <meta property="og:title" content="MémoireManager — La mémoire des managers">
@@ -25,11 +28,15 @@
 </script>
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23ff6b4a'/%3E%3Ctext x='32' y='44' font-family='Georgia' font-size='36' font-weight='bold' fill='%2314100d' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
+
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+
   :root{
     --fond:#14100d;
     --panneau:#1a1410;
@@ -376,9 +383,162 @@
   .reveal.visible{opacity:1;transform:none}
   @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none}}
   @media print{.reveal{opacity:1!important;transform:none!important}}
+
+:root {
+--fond:#0C0A18; --panneau:#120F22; --carte:#181430; --carte-2:#201B3C;
+  --coral:#A78BFA; --coral-fonce:#8B7CF6; --tangerine:#F9A8D4; --ivoire:#F2EFFF;
+  --texte-doux:#C9C0E4; --texte-faible:#8D84AC; --vert:#7BC47F;
+  --ligne:rgba(167,139,250,.12);
+  --ombre-chaude:0 26px 55px -26px rgba(0,0,0,.7), 0 0 0 1px rgba(167,139,250,.10);
+  --lueur:0 0 110px -28px rgba(167,139,250,.40);
+  --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,sans-serif;
+}
+
+/* ============ FUTUR V3 — memoire-manager ============ */
+:root {
+  --fv-a1:#C4B5FD; --fv-a2:#8B7CF6; --fv-a3:#F9A8D4; --fv-al:#818CF8;
+  --fv-bg:#0C0A18; --fv-bg2:#151230; --fv-text:#F2EFFF; --fv-muted:#A8A0C8;
+  --fv-tf:'Fraunces',serif; --fv-bf:'Inter',sans-serif;
+}
+html { scroll-behavior:smooth; }
+body {
+  font-family:var(--fv-bf), system-ui, sans-serif !important;
+  background:#0C0A18 !important;
+  color:#F2EFFF !important;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.title,.sec-title,.kicker,.logo,.brand {
+  font-family:var(--fv-tf), serif !important;
+  letter-spacing:-.01em;
+}
+::selection { background:rgba(196, 181, 253,.4); }
+/* ---------- Fond futuriste ---------- */
+.futur-bg {
+  position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+  background:
+    radial-gradient(58% 44% at 16% 10%, rgba(196, 181, 253,.17), transparent 62%),
+    radial-gradient(50% 40% at 88% 22%, rgba(249, 168, 212,.13), transparent 60%),
+    radial-gradient(54% 46% at 60% 94%, rgba(139, 124, 246,.15), transparent 64%),
+    var(--fv-bg);
+}
+.futur-bg::before {
+  content:""; position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(196, 181, 253,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 181, 253,.06) 1px, transparent 1px);
+  background-size:46px 46px;
+  -webkit-mask-image:radial-gradient(ellipse 92% 72% at 50% 0%, #000 32%, transparent 100%);
+          mask-image:radial-gradient(ellipse 92% 72% at 50% 0%, #000 32%, transparent 100%);
+}
+.futur-bg::after {
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(34% 26% at 80% 16%, rgba(196, 181, 253,.12), transparent 70%);
+  animation:fvPulse 9s ease-in-out infinite;
+}
+@keyframes fvPulse {
+  0%,100% { opacity:.5; transform:scale(1); }
+  50% { opacity:1; transform:scale(1.1); }
+}
+/* ---------- Glassmorphism ---------- */
+.offre, .form-card, .formulaire, .visuel-carte, .faq-item, .rappel-visuel, .essai-cadre {
+  background:linear-gradient(160deg, rgba(196, 181, 253,.10), rgba(139, 124, 246,.05)) !important;
+  backdrop-filter:blur(18px) saturate(150%);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  border:1px solid rgba(196, 181, 253,.28) !important;
+  border-radius:22px !important;
+  box-shadow:0 24px 60px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(196, 181, 253,.06), 0 0 46px -14px rgba(196, 181, 253,.30);
+  transition:transform .32s ease, box-shadow .32s ease, border-color .32s ease;
+}
+.offre, .form-card, .formulaire, .visuel-carte, .faq-item, .rappel-visuel, .essai-cadre:hover {
+  transform:translateY(-6px);
+  box-shadow:0 32px 72px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(196, 181, 253,.13), 0 0 66px -10px rgba(196, 181, 253,.45);
+}
+/* ---------- Navigation ---------- */
+nav, .nav, .main-nav {
+  background:rgba(21, 18, 48,.78) !important;
+  backdrop-filter:blur(16px) saturate(170%);
+  -webkit-backdrop-filter:blur(16px) saturate(170%);
+  border-bottom:1px solid rgba(196, 181, 253,.2);
+}
+nav a, .nav a, .main-nav a { color:var(--fv-muted) !important; transition:color .25s, text-shadow .25s; }
+nav a:hover, .nav a:hover, .main-nav a:hover {
+  color:var(--fv-al) !important;
+  text-shadow:0 0 16px rgba(196, 181, 253,.9);
+}
+.logo, .brand { color:var(--fv-text) !important; }
+/* ---------- Boutons ---------- */
+.btn, .btn-primary, .bouton-principal, .cta-en-tete {
+  background:linear-gradient(135deg, #C4B5FD, #8B7CF6) !important;
+  border:none !important;
+  box-shadow:0 10px 32px -10px rgba(196, 181, 253,.7), 0 0 0 1px rgba(196, 181, 253,.25) !important;
+  transition:transform .25s, box-shadow .25s !important;
+  color:#F2EFFF !important;
+}
+.btn:hover, .btn-primary:hover, .bouton-principal:hover {
+  transform:translateY(-3px) scale(1.02);
+  box-shadow:0 16px 46px -10px rgba(196, 181, 253,.9), 0 0 24px rgba(196, 181, 253,.35) !important;
+}
+.btn-ghost, .btn-secondary, .bouton-contour {
+  background:rgba(196, 181, 253,.09) !important;
+  border:1px solid rgba(196, 181, 253,.42) !important;
+  color:var(--fv-text) !important;
+  backdrop-filter:blur(8px);
+  transition:transform .25s, background .25s, box-shadow .25s;
+}
+.btn-ghost:hover, .btn-secondary:hover, .bouton-contour:hover {
+  background:rgba(196, 181, 253,.18) !important;
+  box-shadow:0 0 34px -6px rgba(196, 181, 253,.6);
+  transform:translateY(-3px);
+}
+/* ---------- Badges / tags ---------- */
+.badge, .tag, .kicker, .etiquette, .sec-tag, .sur-titre, .num {
+  font-family:var(--fv-tf), serif !important;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:#818CF8 !important;
+}
+/* ---------- Champs ---------- */
+input, select, textarea, .champ, .field input, .field select, .form-box input {
+  background:rgba(196, 181, 253,.07) !important;
+  border:1px solid rgba(196, 181, 253,.28) !important;
+  color:var(--fv-text) !important;
+  border-radius:12px !important;
+  transition:border-color .25s, box-shadow .25s;
+}
+input:focus, select:focus, textarea:focus, .champ:focus {
+  border-color:rgba(196, 181, 253,.7) !important;
+  box-shadow:0 0 0 3px rgba(196, 181, 253,.16) !important;
+  outline:none;
+}
+/* ---------- Prix ---------- */
+.prix, .price, .montant { color:#818CF8 !important; }
+/* ---------- Réveil ---------- */
+.reveal { opacity:0; transform:translateY(30px); transition:opacity .8s ease, transform .8s ease; }
+.reveal.visible, .reveal.in { opacity:1; transform:none; }
+/* ---------- Titres glow ---------- */
+.title, .sec-title, h1, h2, .hero-title {
+  text-shadow:0 0 46px rgba(196, 181, 253,.28);
+}
+/* ---------- Extra par site ---------- */
+
+   .offre.populaire { border-color:rgba(196,181,253,.5); box-shadow:0 0 40px rgba(196,181,253,.2); }
+   .prix { color:var(--a1); }
+   .btn-coral { background:linear-gradient(135deg,var(--a1),var(--a2)) !important; color:#0C0A18 !important; }
+   
+/* ---------- Mobile ---------- */
+@media (max-width:760px) {
+  .futur-bg::before { background-size:32px 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation:none !important; transition:none !important; }
+  .reveal { opacity:1; transform:none; }
+}
+
 </style>
 </head>
 <body>
+<div class="futur-bg" aria-hidden="true"></div>
+
 
 <!-- ======= SIDEBAR ======= -->
 <aside class="sidebar">
@@ -710,6 +870,55 @@
   </div>
 </footer>
 
+
+
+
+
+
+
+
+
+<script>
+/* FUTUR V3 — compteurs animés */
+(function(){
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var sels = [".stat b", ".k-val", ".mini-stat b", "[data-count]"];
+  var els = [];
+  sels.forEach(function(s){ document.querySelectorAll(s).forEach(function(el){ els.push(el); }); });
+  if (!els.length || !("IntersectionObserver" in window)) return;
+  function parse(el){
+    var t = el.textContent.trim().replace(/\u00a0/g," ");
+    var m = t.match(/^(\d[\d\s]*(?:[.,]\d+)?)(.*)$/);
+    if (!m) return null;
+    var num = parseFloat(m[1].replace(/\s/g,"").replace(",", "."));
+    if (isNaN(num) || num > 9999999 || num < -9999999) return null;
+    return { target: num, suffix: m[2] || "", hasDec: /[.,]\d/.test(m[1]) };
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var el = en.target, p = parse(el);
+      if (!p) { io.unobserve(el); return; }
+      var start = null, dur = 1500;
+      function step(ts){
+        if (!start) start = ts;
+        var pr = Math.min((ts - start) / dur, 1);
+        var eased = 1 - Math.pow(1 - pr, 3);
+        var val = p.target * eased;
+        el.textContent = (p.hasDec ? val.toLocaleString("fr-FR", {maximumFractionDigits:1}) : Math.round(val).toLocaleString("fr-FR")) + p.suffix;
+        if (pr < 1) requestAnimationFrame(step);
+        else el.textContent = (p.hasDec ? p.target.toLocaleString("fr-FR", {maximumFractionDigits:1}) : Math.round(p.target).toLocaleString("fr-FR")) + p.suffix;
+      }
+      requestAnimationFrame(step);
+      io.unobserve(el);
+    });
+  }, { threshold: .4 });
+  els.forEach(function(el){ io.observe(el); });
+})();
+</script>
+
+<script src="chatbot-config.js"></script>
+<script src="chatbot.js"></script>
 <script>
   // ---------- EmailJS : essai gratuit (envoi réel) ----------
   (function(){
@@ -806,9 +1015,5 @@
   }
 })();
 </script>
-<script src="chatbot-config.js"></script>
-<script src="chatbot.js"></script>
-
-<style>.btn-lg, .btn-coral, .btn { background: linear-gradient(135deg, #ff8a65, #e0452a) !important; border: none; }</style>
 </body>
 </html>
